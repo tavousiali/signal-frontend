@@ -52,7 +52,6 @@ import ChatIcon from "./chat.svg";
 import MoreDotIcon from "./more-dot.svg";
 import BellIcon from "./bell.svg";
 
-console.log(PlusIcon);
 export {
   DownloadIcon,
   BellIcon,

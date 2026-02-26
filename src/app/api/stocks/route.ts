@@ -11,20 +11,22 @@ export async function GET(req: Request) {
   const filter = searchParams.get("filter")?.toLowerCase() || "";
 
   const res = await fetch(
-    "https://brsapi.ir/Api/Tsetmc/Sample/Api_FreeBourseWebService.json",
-    { cache: "no-store" }
+    "https://BrsApi.ir/Api/Tsetmc/AllSymbols.php?key=BemAdgKdifLPD8TRvwXnXtjnHgPFRvzW&type=1",
+    { cache: "no-store" },
   );
 
   const data = await res.json();
 
-  let rows = data;
+  let rows = data
+    .filter((x: any) => x.cs.indexOf("صندوق") === -1)
+    .filter((x: any) => x.l30.indexOf(".") === -1);
 
   // Filter
   if (filter) {
     rows = rows.filter((item: any) =>
       columns.some((col) =>
-        String(item[col.key]).toLowerCase().includes(filter)
-      )
+        String(item[col.key]).toLowerCase().includes(filter),
+      ),
     );
   }
 
