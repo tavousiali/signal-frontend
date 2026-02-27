@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { columns } from "@/lib/columns";
 
@@ -14,48 +20,92 @@ export default function TableClient({ initialRows }: Props) {
   const [rows, setRows] = useState<any[]>(initialRows);
   const [offset, setOffset] = useState(initialRows.length);
   const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [filter, setFilter] = useState("");
+  const [debouncedFilter, setDebouncedFilter] = useState("");
 
   // ============================
-  // Fetch More (Pagination)
+  // Debounce Filter
+  // ============================
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilter(filter);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [filter]);
+
+  // ============================
+  // Fetch More
   // ============================
   const fetchMore = useCallback(async () => {
-    if (!hasMore) return;
+    if (!hasMore || loading) return;
 
-    const res = await fetch(
-      `/api/stocks?offset=${offset}&limit=20&sort=${sortKey ?? ""}&order=${order}&filter=${filter}`
-    );
+    setLoading(true);
+    setError(null);
 
-    const data = await res.json();
+    try {
+      const res = await fetch(
+        `/api/stocks?offset=${offset}&limit=20&sort=${sortKey ?? ""}&order=${order}&filter=${debouncedFilter}`,
+      );
 
-    if (data.rows.length === 0) {
-      setHasMore(false);
-      return;
+      if (res.status === 429) {
+        setError("محدودیت درخواست‌ها فعال شده است. کمی بعد تلاش کنید.");
+        setHasMore(false);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Fetch failed");
+      }
+
+      const data = await res.json();
+
+      if (!data.rows?.length) {
+        setHasMore(false);
+        return;
+      }
+
+      setRows((prev) => [...prev, ...data.rows]);
+      setOffset((prev) => prev + data.rows.length);
+    } catch (err) {
+      setError("خطا در دریافت اطلاعات");
+    } finally {
+      setLoading(false);
     }
-
-    setRows((prev) => [...prev, ...data.rows]);
-    setOffset((prev) => prev + data.rows.length);
-  }, [offset, sortKey, order, filter, hasMore]);
+  }, [offset, sortKey, order, debouncedFilter, hasMore, loading]);
 
   // ============================
   // Reset on sort/filter change
   // ============================
   useEffect(() => {
     const reset = async () => {
-      const res = await fetch(
-        `/api/stocks?offset=0&limit=20&sort=${sortKey ?? ""}&order=${order}&filter=${filter}`
-      );
-      const data = await res.json();
-      setRows(data.rows);
-      setOffset(data.rows.length);
-      setHasMore(true);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(
+          `/api/stocks?offset=0&limit=20&sort=${sortKey ?? ""}&order=${order}&filter=${debouncedFilter}`,
+        );
+
+        const data = await res.json();
+
+        setRows(data.rows || []);
+        setOffset(data.rows?.length || 0);
+        setHasMore(true);
+      } catch {
+        setError("خطا در دریافت اطلاعات");
+      } finally {
+        setLoading(false);
+      }
     };
 
     reset();
-  }, [sortKey, order, filter]);
+  }, [sortKey, order, debouncedFilter]);
 
   // ============================
   // Virtualizer
@@ -67,19 +117,17 @@ export default function TableClient({ initialRows }: Props) {
     overscan: 8,
   });
 
-  // Trigger fetch when reaching bottom
+  // Trigger fetch when bottom reached
   useEffect(() => {
-    const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse();
+    const items = rowVirtualizer.getVirtualItems();
+    const lastItem = items[items.length - 1];
 
     if (!lastItem) return;
 
-    if (
-      lastItem.index >= rows.length - 1 &&
-      hasMore
-    ) {
+    if (lastItem.index >= rows.length - 1 && hasMore && !loading) {
       fetchMore();
     }
-  }, [rowVirtualizer.getVirtualItems(), rows.length, hasMore, fetchMore]);
+  }, [rowVirtualizer, rows.length, hasMore, loading, fetchMore]);
 
   // ============================
   // Sorting Handler
@@ -97,10 +145,9 @@ export default function TableClient({ initialRows }: Props) {
   // Render
   // ============================
   return (
-    <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-
+    <div className="rounded-sm border bg-white dark:bg-boxdark">
       {/* Filter */}
-      <div className="p-4 border-b border-stroke dark:border-strokedark">
+      <div className="p-4 border-b">
         <input
           type="text"
           placeholder="جستجو..."
@@ -112,7 +159,7 @@ export default function TableClient({ initialRows }: Props) {
 
       {/* Header */}
       <div
-        className="grid text-xs font-semibold bg-gray-100 dark:bg-meta-4 p-3 sticky top-0 z-10"
+        className="grid text-xs font-semibold bg-gray-100 p-3 sticky top-0 z-10"
         style={{
           gridTemplateColumns: `repeat(${columns.length}, minmax(120px,1fr))`,
         }}
@@ -130,10 +177,7 @@ export default function TableClient({ initialRows }: Props) {
       </div>
 
       {/* Body */}
-      <div
-        ref={parentRef}
-        className="h-[600px] overflow-auto"
-      >
+      <div ref={parentRef} className="h-[600px] overflow-auto">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
@@ -157,7 +201,7 @@ export default function TableClient({ initialRows }: Props) {
                   }}
                   className="flex items-center justify-center text-sm text-gray-400"
                 >
-                  در حال بارگذاری...
+                  {loading ? "در حال بارگذاری..." : "—"}
                 </div>
               );
             }
@@ -165,7 +209,7 @@ export default function TableClient({ initialRows }: Props) {
             return (
               <div
                 key={virtualRow.key}
-                className="grid text-xs border-b border-stroke dark:border-strokedark items-center px-3"
+                className="grid text-xs border-b items-center px-3"
                 style={{
                   gridTemplateColumns: `repeat(${columns.length}, minmax(120px,1fr))`,
                   position: "absolute",
@@ -192,6 +236,11 @@ export default function TableClient({ initialRows }: Props) {
           })}
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="p-3 text-red-500 text-sm border-t">{error}</div>
+      )}
     </div>
   );
 }
