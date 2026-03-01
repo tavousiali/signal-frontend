@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { columns } from "@/lib/columns";
+import NumberCell from "./NumberCell";
 
 type Props = {
   initialRows: any[];
@@ -159,7 +160,7 @@ export default function TableClient({ initialRows }: Props) {
 
       {/* Header */}
       <div
-        className="grid text-xs font-semibold bg-gray-100 p-3 sticky top-0 z-10"
+        className="grid text-xs font-semibold bg-gray-100 p-3 sticky top-0 z-10 pl-4"
         style={{
           gridTemplateColumns: `repeat(${columns.length}, minmax(120px,1fr))`,
         }}
@@ -168,7 +169,7 @@ export default function TableClient({ initialRows }: Props) {
           <div
             key={col.key}
             onClick={() => handleSort(col.key)}
-            className="cursor-pointer select-none"
+            className="cursor-pointer select-none text-right-dir-ltr"
           >
             {col.label}
             {sortKey === col.key && (order === "asc" ? " 🔼" : " 🔽")}
@@ -223,13 +224,7 @@ export default function TableClient({ initialRows }: Props) {
                 {columns.map((col) => {
                   const value = row[col.key];
 
-                  return (
-                    <div key={col.key}>
-                      {typeof value === "number"
-                        ? value.toLocaleString()
-                        : value}
-                    </div>
-                  );
+                  return <NumberCell key={col.key} value={value} />;
                 })}
               </div>
             );
