@@ -45,6 +45,7 @@ export async function GET(req: Request) {
   const sort = searchParams.get("sort");
   const order = searchParams.get("order") || "asc";
   const filter = searchParams.get("filter")?.toLowerCase() || "";
+  const symbol = searchParams.get("symbol")?.toLowerCase() || "";
 
   let apiData: any[];
 
@@ -104,6 +105,11 @@ export async function GET(req: Request) {
           .includes(filter),
       ),
     );
+  }
+
+  // Filter
+  if (symbol) {
+    rows = rows.filter((item: any) => item.l18.toLowerCase().includes(symbol));
   }
 
   // Sort
