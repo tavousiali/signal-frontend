@@ -226,7 +226,11 @@ export default function TableClient({ initialRows }: Props) {
                   const value = row[col.key];
                   if (col.key === "l18") {
                     return (
-                      <Link key={col.key} href={`/stock/${value}`}>
+                      <Link
+                        className="text-brand-500"
+                        key={col.key}
+                        href={`/${value}`}
+                      >
                         {value}
                       </Link>
                     );
