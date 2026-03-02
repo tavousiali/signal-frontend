@@ -10,6 +10,7 @@ import React, {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { columns } from "@/lib/columns";
 import NumberCell from "./NumberCell";
+import Link from "next/link";
 
 type Props = {
   initialRows: any[];
@@ -223,7 +224,13 @@ export default function TableClient({ initialRows }: Props) {
               >
                 {columns.map((col) => {
                   const value = row[col.key];
-
+                  if (col.key === "l18") {
+                    return (
+                      <Link key={col.key} href={`/stock/${value}`}>
+                        {value}
+                      </Link>
+                    );
+                  }
                   return <NumberCell key={col.key} value={value} />;
                 })}
               </div>
