@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "لیست سهام", path: "/", pro: false },
+      { name: "چت", path: "/chat", pro: false },
       { name: "Ecommerce", path: "/ecommerce", pro: false },
     ],
   },
@@ -301,7 +302,6 @@ const AppSidebar: React.FC = () => {
               ? "w-[290px]"
               : "w-[90px]"
         }
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
