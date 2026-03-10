@@ -147,21 +147,21 @@ export default function TableClient({ initialRows }: Props) {
   // Render
   // ============================
   return (
-    <div className="rounded-sm border bg-white dark:bg-boxdark">
+    <div className="rounded-sm border bg-white dark:bg-gray-900 dark:border-gray-800 dark:text-white dark:bg-boxdark">
       {/* Filter */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b dark:border-gray-800">
         <input
           type="text"
           placeholder="جستجو..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="w-64 rounded border px-3 py-2 text-sm dark:bg-boxdark dark:text-white"
+          className="w-64 rounded border px-3 py-2 text-sm dark:bg-boxdark dark:text-white dark:border-gray-800"
         />
       </div>
 
       {/* Header */}
       <div
-        className="grid text-xs font-semibold bg-gray-100 p-3 sticky top-0 z-10 pl-4"
+        className="grid text-xs font-semibold bg-gray-100 dark:bg-gray-900 dark:border-gray-800 dark:text-white p-3 sticky top-0 z-10 pl-4"
         style={{
           gridTemplateColumns: `repeat(${columns.length}, minmax(120px,1fr))`,
         }}
@@ -211,7 +211,7 @@ export default function TableClient({ initialRows }: Props) {
             return (
               <div
                 key={virtualRow.key}
-                className="grid text-xs border-b items-center px-3"
+                className="grid text-xs border-b items-center px-3 dark:border-gray-800"
                 style={{
                   gridTemplateColumns: `repeat(${columns.length}, minmax(120px,1fr))`,
                   position: "absolute",

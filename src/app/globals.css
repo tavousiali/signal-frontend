@@ -787,3 +787,6 @@ span.flatpickr-weekday,
 [data-negative="true"]::after {
   content: ")";
 }
+.white-space-pre-wrap {
+  white-space: pre-wrap;
+}

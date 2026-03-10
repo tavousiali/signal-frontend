@@ -1,0 +1,36 @@
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 1rem;
+}
+.chatWindow {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  height: 400px;
+  overflow-y: auto;
+}
+.assistant {
+  color: #1a73e8;
+  margin-bottom: 0.5rem;
+}
+.user {
+  color: #0f9d58;
+  margin-bottom: 0.5rem;
+}
+.streaming {
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+.inputArea {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.textarea {
+  flex: 1;
+  resize: none;
+}
+.sendBtn {
+  padding: 0.5rem 1rem;
+}
