@@ -790,3 +790,13 @@ span.flatpickr-weekday,
 .white-space-pre-wrap {
   white-space: pre-wrap;
 }
+.code-block {
+  direction: ltr; /* چپ به راست */
+  text-align: left;
+  white-space: pre-wrap; /* تمام فاصله‌ها را نگه می‌دارد */
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  background: #f7f7f7;
+  padding: 0.8rem;
+  border-radius: 4px;
+  overflow-x: auto; /* اگر طولانی‌تر بود، اسکرول افقی */
+}

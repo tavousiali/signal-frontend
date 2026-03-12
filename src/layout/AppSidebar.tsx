@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     subItems: [
       { name: "لیست سهام", path: "/", pro: false },
-      { name: "چت", path: "/chat", pro: false },
+      { name: "چت", path: "/chat-page", pro: false },
       { name: "Ecommerce", path: "/ecommerce", pro: false },
     ],
   },

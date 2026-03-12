@@ -13,9 +13,9 @@ export default function Chat() {
   const outputRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // -------------------------------------------------------------------
-  // ۱. تابع ارسال پیام
-  // -------------------------------------------------------------------
+  /* ------------------------------ */
+  /* 1. تابع ارسال پیام           */
+  /* ------------------------------ */
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -33,7 +33,6 @@ export default function Chat() {
       }),
     });
 
-    // در صورت خطا در درخواست، خروجی
     if (!res.ok) {
       console.error("API error", res.statusText);
       setIsStreaming(false);
@@ -46,52 +45,53 @@ export default function Chat() {
     const decoder = new TextDecoder("utf-8");
     let assistantText = "";
 
-    // حلقه‌ی خواندن بسته‌های stream
+    /* ------------------------------ */
+    /* 2. خواندن stream              */
+    /* ------------------------------ */
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break; // سرور بسته‌ی نهایی را بسته بود
+      if (done) break;
+
       const chunk = decoder.decode(value, { stream: true });
 
-      // ۱. جدا کردن خطوط ( newline‑delimited JSON )
+      /* 2.1 جدا کردن خطوط (newline‑delimited JSON) */
       const lines = chunk.split("\n").filter((l) => l.trim() !== "");
 
       for (const rawLine of lines) {
-        // اگر پیشوند "data:" وجود داشت، آن را برش می‌دهیم
         const line = rawLine.startsWith("data: ")
           ? rawLine.slice("data: ".length)
           : rawLine;
 
-        // ۲. پارس JSON
         try {
           const obj = JSON.parse(line);
-
-          // ۳. متن را از فیلد content اضافه می‌کنیم
           const part = obj.message.content ?? "";
           assistantText += part;
 
-          // ۴. نمایش به صورت live
+          /* 2.2 نمایش به صورت live – تبدیل Markdown به HTML */
           if (outputRef.current) {
-            outputRef.current.textContent = assistantText;
+            outputRef.current.innerHTML = markdownToHtml(assistantText);
           }
-        } catch (e) {
-          console.warn("خطای JSON در دریافت stream:", e);
+        } catch {
+          /* ignore parse errors */
         }
       }
     }
 
-    // ۵. افزودن پیام نهایی به آرایه‌ی `messages`
+    /* ------------------------------ */
+    /* 3. پایان stream               */
+    /* ------------------------------ */
     setMessages((prev) => [
       ...prev,
       { role: "assistant", content: assistantText },
     ]);
 
     setIsStreaming(false);
-    setInput(""); // پاک کردن textarea
+    setInput("");
   };
 
-  // -------------------------------------------------------------------
-  // ۲. UI
-  // -------------------------------------------------------------------
+  /* ------------------------------ */
+  /* 4. UI                          */
+  /* ------------------------------ */
   return (
     <div className={styles.container}>
       <div className={styles.chatWindow}>
@@ -100,7 +100,13 @@ export default function Chat() {
             key={i}
             className={m.role === "assistant" ? styles.assistant : styles.user}
           >
-            <strong>{m.role === "assistant" ? "🤖" : "🧑"}:</strong> {m.content}
+            <strong>{m.role === "assistant" ? "🤖" : "🧑"}:</strong>{" "}
+            {/* در اینجا می‌توانیم هم‌زمان به Markdown و HTML تبدیل کنیم */}
+            <span
+              dangerouslySetInnerHTML={{
+                __html: markdownToHtml(m.content),
+              }}
+            />
           </div>
         ))}
 
@@ -127,4 +133,72 @@ export default function Chat() {
       </div>
     </div>
   );
+}
+
+/* ------------------------------ */
+/* 5. تبدیل Markdown به HTML     */
+/* ------------------------------ */
+function markdownToHtml(md: string): string {
+  /* 1. escape HTML */
+  md = md.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  /* 2. بلوک‌های کد (به‌صورت ***پس از escape کردن backtick***) */
+  md = md.replace(
+    /`{3}(\w+)?\n([\s\S]*?)\n`{3}/g,
+    (_, lang = "", code) =>
+      `<pre class="code-block"><code${lang ? ' class="language-' + lang + '"' : ""}>${code}</code></pre>`,
+  );
+
+  /* 3. سرفصل‌ها – فاصله اختیاری */
+  const heads = [
+    [/^######\s*(.*)$/gm, "<h6>$1</h6>"],
+    [/^#####\s*(.*)$/gm, "<h5>$1</h5>"],
+    [/^####\s*(.*)$/gm, "<h4>$1</h4>"],
+    [/^###\s*(.*)$/gm, "<h3>$1</h3>"],
+    [/^##\s*(.*)$/gm, "<h2>$1</h2>"],
+    [/^#\s*(.*)$/gm, "<h1>$1</h1>"],
+  ];
+  heads.forEach(([re, rep]) => {
+    md = md.replace(re, rep);
+  });
+
+  /* 4. خط‌کش افقی */
+  md = md.replace(/^---$/gm, "<hr>");
+
+  /* 5. بولد */
+  md = md.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  md = md.replace(/__(.+?)__/g, "<strong>$1</strong>");
+
+  /* 6. ایتالیک */
+  md = md.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  md = md.replace(/_(.+?)_/g, "<em>$1</em>");
+
+  /* 7. لینک */
+  md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  /* 8. لیست‌های ترتیب‌دار (یک <ol> برای تمام آیتم‌ها) */
+  const ol = md.match(/^(\s*\d+\.\s+.*)$/gm);
+  if (ol) {
+    const items = ol
+      .map((x) => `<li>${x.replace(/^\s*\d+\.\s+/, "")}</li>`)
+      .join("");
+    md = md.replace(ol.join("\n"), `<ol>${items}</ol>`);
+  }
+
+  /* 9. لیست‌های بدون ترتیب (یک <ul> برای تمام آیتم‌ها) */
+  const ul = md.match(/^(\s*[-+*]\s+.*)$/gm);
+  if (ul) {
+    const items = ul
+      .map((x) => `<li>${x.replace(/^\s*[-+*]\s+/, "")}</li>`)
+      .join("");
+    md = md.replace(ul.join("\n"), `<ul>${items}</ul>`);
+  }
+
+  /* 10. پاراگراف‌ها (تنها خطوطی که در پیش از این تبدیل نشده‌اند) */
+  md = md.replace(/^\s*(.+?)\s*$/gm, (m, line) => {
+    if (/<(h[1-6]|pre|code|ul|ol|li|hr)>/.test(line)) return line;
+    return `<p>${line}</p>`;
+  });
+
+  return md;
 }
