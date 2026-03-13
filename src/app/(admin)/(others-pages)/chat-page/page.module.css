@@ -27,10 +27,18 @@
   display: flex;
   gap: 0.5rem;
 }
+.inputArea > div {
+  width: 100%;
+}
 .textarea {
   flex: 1;
   resize: none;
+  padding: 8px;
+  border: 1px solid #ddd;
 }
 .sendBtn {
   padding: 0.5rem 1rem;
+  white-space: nowrap;
+  margin-top: 4rem;
+  height: 2rem;
 }

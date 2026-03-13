@@ -1,4 +1,4 @@
-import React, { KeyboardEvent } from "react";
+import React, { KeyboardEvent, RefObject } from "react";
 
 interface TextareaProps {
   placeholder?: string; // Placeholder text
@@ -10,6 +10,7 @@ interface TextareaProps {
   error?: boolean; // Error state
   hint?: string; // Hint text to display
   onKeyDown?: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
+  ref: RefObject<HTMLTextAreaElement | null>;
 }
 
 const TextArea: React.FC<TextareaProps> = ({
@@ -22,6 +23,7 @@ const TextArea: React.FC<TextareaProps> = ({
   error = false, // Error state
   hint = "", // Default hint text
   onKeyDown,
+  ref,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onChange) {
@@ -49,6 +51,7 @@ const TextArea: React.FC<TextareaProps> = ({
         disabled={disabled}
         className={textareaClasses}
         onKeyDown={onKeyDown}
+        ref={ref}
       />
       {hint && (
         <p
