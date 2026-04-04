@@ -5,7 +5,7 @@ const API_URL =
   // "https://BrsApi.ir/Api/Tsetmc/AllSymbols.php?key=BemAdgKdifLPD8TRvwXnXtjnHgPFRvzW&type=1";
   "https://brsapi.ir/Api/Tsetmc/Sample/Api_FreeBourseWebService.json";
 
-const REVALIDATE_TIME = 1800; // 30 دقیقه
+const REVALIDATE_TIME = 18000; // 300 دقیقه
 
 function formatLargeNumber(n: number) {
   if (typeof n !== "number" || !isFinite(n)) return n;

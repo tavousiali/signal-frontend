@@ -20,6 +20,7 @@ export type TRealLegalType = {
   sell_N_Value: number; //ارزش فروش حقوقی
   sell_I_Count: number; //تعداد فروش حقیقی
   sell_N_Count: number; //تعداد فروش حقوقی
+  shamsiDate: string; //تاریخ شمسی
 };
 
 export type TRealLegalResponseType = {

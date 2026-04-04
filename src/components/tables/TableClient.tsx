@@ -229,7 +229,7 @@ export default function TableClient({ initialRows }: Props) {
                       <Link
                         className="text-brand-500"
                         key={col.key}
-                        href={`/${value}`}
+                        href={`ai-agent?symbol=${value}`}
                       >
                         {value}
                       </Link>
