@@ -93,7 +93,7 @@ const AIAgent = () => {
   const getOllamaProcess = async (
     lastNDaysData: TRealLegalType[],
     processedData: TRealLegalRatioType[],
-  ): Promise<string> => {
+  ): Promise<void> => {
     console.log(lastNDaysData, processedData);
 
     const systemMessage = `تو یه متخصص حرفه ای در زمینه پیشنهاد سهم در معاملات بازار بورس ایران هستی
@@ -327,6 +327,10 @@ const AIAgent = () => {
     `;
     //TODO: میانگین حجم یا ارزش معاملات ۳۰ روز اخیر رو هم باید بذارم تا جاهایی که میگه خروج پول شدید یا معمولی، بیشتر واضح بشه.
 
+    // حالت اولیه برای استریم
+    setStatus("در حال پردازش AI ...");
+    setOllamaResult(""); // پاک کردن نتیجه قبلی در صورت وجود
+
     console.log(systemMessage);
     console.log(userMessage);
 
@@ -339,18 +343,52 @@ const AIAgent = () => {
           { role: "developer", systemMessage },
           { role: "user", content: userMessage },
         ],
-        stream: false,
+        stream: true,
       }),
     });
 
     if (!res.ok) {
       console.error("API error", res.statusText);
-      return "";
+      setStatus("خطا در پردازش"); // به‌روزرسانی وضعیت خطا
+      return;
     }
 
-    const assistantResponse = await res.json();
-    const assistantText = assistantResponse.message.content;
-    return assistantText;
+    const reader = res.body?.getReader();
+    if (!reader) {
+      setStatus("خطا در دریافت پاسخ");
+      return;
+    }
+
+    const decoder = new TextDecoder("utf-8");
+    let assistantText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n").filter((l) => l.trim() !== "");
+
+      for (const rawLine of lines) {
+        const line = rawLine.startsWith("data: ")
+          ? rawLine.slice("data: ".length)
+          : rawLine;
+
+        try {
+          const obj = JSON.parse(line);
+          const part = obj.message.content ?? "";
+          assistantText += part;
+
+          // نمایش استریم شده با تبدیل Markdown به HTML
+          setOllamaResult(assistantText); // آپدیت مستقیم نتیجه
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+
+    // پایان استریم
+    setStatus(""); // پاک کردن وضعیت پردازش
   };
 
   const [ollamaResult, setOllamaResult] = useState("");
@@ -365,14 +403,8 @@ const AIAgent = () => {
       setStatus("پردازش اطلاعات ...");
       const lastNDaysData = getLastNDaysData(data, 5, 20251229);
       const processedData = processedRealLegalData(lastNDaysData);
-      setStatus("در حال پردازش AI ...");
-      const ollamaProcess = await getOllamaProcess(
-        lastNDaysData,
-        processedData,
-      );
-      console.log("🚀 ~ load ~ ollamaProcess:", ollamaProcess);
-      setOllamaResult(ollamaProcess);
-      setStatus("");
+
+      await getOllamaProcess(lastNDaysData, processedData);
     }
 
     load();
@@ -380,13 +412,14 @@ const AIAgent = () => {
 
   return (
     <>
+      <div className="text-black">Salam</div>
       <div className="mx-auto w-full max-w-[630px] text-center">
         <h3 className="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl">
           بررسی معاملات حقیقی و حقوقی سهم «{symbol}»
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
           {status}
-          {ollamaResult}
+          <span dangerouslySetInnerHTML={{ __html: ollamaResult }}></span>
         </p>
       </div>
     </>
